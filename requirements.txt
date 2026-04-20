@@ -1,0 +1,8 @@
+mcp[cli]
+httpx
+requests
+beautifulsoup4
+PyGithub
+web3
+python-dotenv
+tweepy

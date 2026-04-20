@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "aditya-personal": {
+      "command": "C:/Users/KIIT0001/OneDrive/Desktop/Personal MCP server/.venv/Scripts/python.exe",
+      "args": [
+        "C:/Users/KIIT0001/OneDrive/Desktop/Personal MCP server/server.py"
+      ]
+    }
+  }
+}
