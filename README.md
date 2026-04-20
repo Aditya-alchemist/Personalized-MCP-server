@@ -1,173 +1,279 @@
-# Aditya Personal MCP Server
+﻿# Aditya Personal MCP Server
 
-Aditya Personal MCP Server is a practical, production-minded personal context layer that connects an AI assistant to the systems that represent your real technical identity. Instead of pasting profile details, portfolio links, repository summaries, or on-chain contract status in every conversation, this server exposes those data sources through a stable set of MCP tools and one reusable prompt. The result is a persistent intelligence interface that gives an AI assistant grounded context about your work, not just generic responses.
+Aditya Personal MCP Server is a local, practical context infrastructure project that makes an AI assistant actually useful for your real work. Most assistants become generic because they do not know anything about your active repos, deployed contracts, portfolio updates, or current positioning as a developer. This server solves that by exposing your own data sources as stable MCP tools. Instead of repeating context in every conversation, you run one service and let the assistant query it directly.
 
-At the center of the project is FastMCP with a Python transport over stdio. Around that core, each integration is modularized into a dedicated tool file. Portfolio scraping uses HTTP and HTML parsing, GitHub uses the official API client, contract reads use Web3 against Sepolia RPC, social tooling covers LinkedIn and X, and a prompt generator composes contextual cold outreach from your live data. A dedicated health tool helps you quickly validate what is configured and what still needs action.
+This project is designed for developer reality, not demo reality. It includes source connectors that you actually care about as a blockchain-focused engineer: your portfolio website, your GitHub profile, your deployed contract interfaces through Sepolia RPC, optional social context from LinkedIn and X, and a prompt utility that builds cold outreach context from your own profile data. The value is not only automation. The bigger value is consistency and grounded responses. When the assistant can query your live sources, it stops guessing and starts referencing what is true now.
 
-## Why This Project Exists
+## What You Are Building
 
-Developers usually have a fragmented online identity. Portfolio sites show polished highlights, GitHub shows implementation depth, deployed contracts reveal protocol reality, and social channels reveal communication and thought leadership. Most assistants only see one of those at a time unless you manually provide context. This project solves that gap by creating a local server that unifies those sources and makes them callable by any MCP-capable client.
+At a high level, you are building a personal context API for AI clients. The API is delivered as MCP tools, and those tools are served by a FastMCP Python app. Every tool has a focused job:
 
-This means your assistant can answer questions such as:
+- Portfolio tool for website summary and project extraction
+- GitHub tools for repository listing and detailed repository context
+- Contract tools for state reads and view-function calls on deployed contracts
+- LinkedIn tools for profile and recent post summaries (optional)
+- X tools for profile and tweet-level engagement snapshots
+- Health tool for integration readiness checks
+- Prompt tool for personalized cold email generation
 
-- What are the most relevant repositories to mention for a DeFi role?
-- Is your Sepolia contract reachable and returning expected state?
-- Which project themes appear across your portfolio and GitHub?
-- Can a short outbound email be generated from real profile context without fabrication?
+The assistant can now answer questions like:
 
-## Architecture Overview
+- Which of my projects should I pitch for a specific role?
+- What is the current chain ID and readable state of this contract?
+- Which repositories best represent my DeFi work?
+- Is my environment fully configured or still missing secrets?
+- Can you draft a short outreach email based on my real project profile?
 
-```mermaid
-flowchart LR
-	U[User in Claude or MCP Client] --> A[Local MCP Runtime]
-	A --> S[server.py FastMCP]
-	S --> T1[tools/portfolio.py]
-	S --> T2[tools/github.py]
-	S --> T3[tools/contracts.py]
-	S --> T4[tools/linkedin.py]
-	S --> T5[tools/twitter.py]
-	S --> T6[tools/email_draft.py]
-	S --> T7[tools/health.py]
-	T1 --> P[Portfolio Website]
-	T2 --> G[GitHub API]
-	T3 --> R[Sepolia RPC]
-	T4 --> L[LinkedIn Interface]
-	T5 --> X[X API]
-```
+This is the shift from prompt engineering to context engineering.
 
-The server is intentionally thin: it defines tool signatures, loads environment variables, and dispatches to tool modules. Tool modules hold integration logic and error boundaries. This pattern makes the project easy to maintain and easy to extend with additional capabilities like calendar ingestion, resume parsing, job-tracker sync, or productivity analytics.
+## Core Design Principles
 
-## Request Lifecycle
+The server follows five practical design principles:
 
-```mermaid
-sequenceDiagram
-	participant C as MCP Client
-	participant M as FastMCP Server
-	participant T as Tool Module
-	participant API as External Source
-	C->>M: Invoke tool (example: github_repos)
-	M->>T: Validate input and call handler
-	T->>API: Fetch data
-	API-->>T: JSON/HTML/contract response
-	T-->>M: Normalized response dict/list
-	M-->>C: Final MCP tool result
-```
+1. Local-first execution
+The service runs on your machine, with your env file, under your control. You are not forced to host data in an external service for basic usage.
 
-Every tool follows the same outcome model: attempt operation, normalize output, and return predictable error payloads when a source is unavailable or partially configured. This keeps the assistant behavior reliable even when optional integrations are intentionally disabled.
+2. Modular integration boundaries
+Each integration lives in its own file, so failures are isolated and extension is easy.
 
-## Project Structure
+3. Predictable output structures
+Tools return consistent dictionaries and lists with explicit error objects when calls fail.
 
-- `server.py`: FastMCP entrypoint that registers tools and prompts.
-- `tools/portfolio.py`: Pulls title, about, and project cards from your portfolio URL.
-- `tools/github.py`: Lists repositories and fetches repo-level details including README where available.
-- `tools/contracts.py`: Reads on-chain state and calls zero-argument view functions.
-- `tools/linkedin.py`: Optional LinkedIn integration with graceful dependency handling.
-- `tools/twitter.py`: X profile and recent tweet analytics via API v2 client.
-- `tools/email_draft.py`: Builds context block used by cold outreach prompt.
-- `tools/health.py`: Integration readiness and environment diagnostics.
-- `abis/`: Contract ABI files for protocol-specific calls.
-- `.env.example`: Template for all required and optional credentials.
-- `requirements.txt`: Python dependencies for local runtime.
+4. Graceful degradation
+Optional integrations should not crash the server. If LinkedIn or X is unavailable, the rest should still work.
 
-## Tooling Coverage
+5. Fast diagnostics
+A dedicated integration health tool gives immediate visibility into configuration and connectivity.
 
-The current API surface is intentionally practical:
+These principles keep the project stable while you iterate rapidly.
 
-- `portfolio_summary()` for public website context.
-- `github_repos()` and `github_repo_details(repo_name)` for code footprint.
-- `contract_state(address, abi_path)` and `contract_call(address, abi_path, fn_name)` for DeFi observability.
-- `linkedin_profile(username)` and `linkedin_posts(username, count)` for professional profile context.
-- `twitter_profile(username)` and `twitter_recent_posts(username, count)` for social performance snapshots.
-- `integration_health()` for setup verification and runtime readiness.
-- `cold_email_draft(recipient_role, company)` prompt for constrained outbound drafting.
+## System Components
 
-## Integration Health Logic
+The project is intentionally simple in layout but strong in capability.
 
-The health subsystem is designed to be the first test after setup and the first checkpoint when debugging. It inspects required environment variables, optional variables, dependency availability, and RPC reachability where applicable.
+The entrypoint is server.py. It loads environment variables, initializes FastMCP, and registers all tools and prompt handlers.
 
-```mermaid
-flowchart TD
-	A[Start integration_health] --> B[Read env variables]
-	B --> C[Check required keys]
-	C --> D[Check optional providers]
-	D --> E[Probe RPC connectivity]
-	E --> F[Check optional linkedin-api module]
-	F --> G[Build summary object]
-	G --> H[Return core_ready + missing_required_env + integration details]
-```
+The tools directory contains integration modules:
 
-This gives you quick answers to operational questions:
+- portfolio.py: fetches and parses your portfolio site
+- github.py: calls GitHub APIs for repo list and detailed repo context
+- contracts.py: handles ABI loading and Web3 read calls
+- linkedin.py: optional LinkedIn integration with safe error behavior
+- twitter.py: X profile and recent tweet analytics
+- email_draft.py: creates reusable context for outbound messaging
+- health.py: checks env readiness and provider-level status
 
-- Is the server healthy enough for core usage right now?
-- Which integration is blocking full readiness?
-- Is the blockchain endpoint reachable from local network?
+The abis directory contains contract interface files such as LendingPool, MarginEngine, and TokenizedRepo.
 
-## Setup and Local Run
+requirements.txt defines runtime dependencies, and .env.example documents expected environment keys.
 
-1. Create a Python virtual environment in project root.
-2. Install dependencies from `requirements.txt`.
-3. Copy `.env.example` to `.env` and fill only the integrations you want.
-4. Start the server with `python server.py` from the venv.
-5. Connect through an MCP client such as Claude Desktop.
+## Why This Matters for Personal Brand and Career
 
-LinkedIn and X can be left unconfigured. The server will still run and return explicit messages for disabled integrations, while core tools continue to operate.
+Most developers underuse AI because they treat it like a standalone chatbot. In reality, AI becomes far more valuable when it can query your work system directly.
 
-## Claude Desktop Integration (Windows)
+When an assistant can read your portfolio and repositories, it can generate better role-targeted summaries. When it can read contract state, it can discuss protocol behavior with accuracy. When it has health checks, it can quickly tell you what is misconfigured before a demo or interview.
 
-Use `%APPDATA%/Claude/claude_desktop_config.json` and add an MCP server entry that points to your project venv Python executable and `server.py`. One common pitfall is file encoding. The config must be valid JSON and should be saved without a UTF-8 BOM to avoid parse failures in some builds.
+This has compounding value:
 
-After updating config, fully quit Claude Desktop from the tray, relaunch, and open a fresh chat. First prompt should call `integration_health` so you can verify loaded tools and environment status before deeper testing.
+- Better outbound messages because context is factual
+- Faster technical writing because project details are available on demand
+- Better interview prep because assistants can reference your own repo history
+- Better debugging support because environment and data source health are visible
 
-## Security and Secret Handling
+In short, this server is not only a tooling project. It is a leverage project.
 
-This project is designed for local-first operation and should not leak credentials into version control.
+## Setup Strategy
 
-- Keep all tokens in `.env`, never in source code.
-- Never commit `.env` or local runtime artifacts.
-- Rotate tokens immediately if accidentally exposed.
-- Prefer minimum-scope tokens for GitHub and X.
-- Treat contract RPC keys as sensitive operational credentials.
+The recommended setup flow is straightforward and reliable:
 
-Recommended practice is to run this server in a dedicated environment where only required credentials are present, and optional integrations are intentionally left blank unless needed.
+1. Create virtual environment in project root
+2. Install dependencies from requirements.txt
+3. Copy .env.example to .env
+4. Fill only the integrations you want now
+5. Start server.py from the virtual environment
+6. Connect through an MCP-compatible client
+7. Run integration health first
 
-## GitHub PAT Guidance
+A practical point: optional providers can stay disabled without blocking core functionality. This matters because social platform APIs often have changing policies and keys. Portfolio, GitHub, contracts, and prompt tooling already provide strong baseline value.
 
-For GitHub integration, `GITHUB_USERNAME` is required and `GITHUB_PAT` is optional for public repo reads. However, using a PAT improves reliability and rate limits. Fine-grained PAT is preferred over legacy classic tokens. If private repositories are needed later, expand token permissions minimally and only for selected repositories.
+## Environment Variables and Secret Model
 
-## Known Constraints
+The environment model is explicit and easy to reason about.
 
-- Python 3.14 can trigger build issues for native packages used by some unofficial libraries.
-- LinkedIn integration is optional and may be brittle due upstream changes.
-- X impression metrics may require elevated access and user-context permissions.
-- Contract function helper currently supports zero-argument view/pure calls for safety.
+Portfolio:
 
-None of these constraints block core usage. Portfolio, GitHub, contract reads, health checks, and prompt generation still provide high value in a minimal setup.
+- PORTFOLIO_URL
 
-## Testing Checklist
+GitHub:
 
-Run these prompts in your MCP client after startup:
+- GITHUB_USERNAME
+- GITHUB_PAT (optional for public repos, recommended for stability)
 
-1. Show me my integration health.
-2. Summarize my portfolio website.
-3. List my GitHub repositories with stars.
-4. Get details for repository `<repo_name>`.
-5. Read contract state for `<address>` using `abis/LendingPool.json`.
-6. Draft a cold email to a Smart Contract Engineer at Chainlink.
+Blockchain:
 
-The first prompt validates setup. The next prompts validate each data plane independently. If one integration fails, health output and tool-level error payloads make triage straightforward.
+- RPC_URL
 
-## Roadmap
+LinkedIn (optional):
 
-Possible next upgrades include:
+- LINKEDIN_EMAIL
+- LINKEDIN_PASSWORD
 
-- Add structured caching for portfolio and GitHub responses.
-- Add typed schemas to normalize tool outputs for downstream app rendering.
-- Extend contract tools to support argumented view calls with safe ABI decoding.
-- Add optional persistent observability logs for request latency and error distribution.
-- Add a role-aware prompt library for outreach, cover letters, and grant submissions.
+X:
 
-## Summary
+- X_BEARER_TOKEN
+- X_CONSUMER_KEY and X_SECRET_KEY preferred
+- X_API_KEY and X_API_SECRET supported for backward compatibility
+- X_ACCESS_TOKEN and X_ACCESS_SECRET optional depending on endpoint usage
 
-Aditya Personal MCP Server turns scattered professional signals into a single, queryable AI interface. It is local, extensible, integration-aware, and practical for daily usage. By connecting portfolio, code, on-chain state, and communication channels under one MCP server, you enable assistants to respond with context that is current, verifiable, and specific to your actual work. This is the foundation for a personal AI control plane: one endpoint that reflects what you build, what you ship, how your protocol behaves, and how you present yourself across the ecosystem.
-#   P e r s o n a l i z e d - M C P - s e r v e r  
- 
+Secret hygiene recommendations:
+
+- Never commit .env
+- Rotate leaked tokens immediately
+- Use least-privilege scopes
+- Prefer fine-grained GitHub tokens
+- Keep local-only credentials local
+
+## Tool Behavior Summary
+
+Portfolio tool:
+Attempts to fetch your website and extract useful fields like title, about text, and probable project cards. If the site is unreachable, it returns explicit error output without crashing the app.
+
+GitHub repo list:
+Returns repo metadata such as stars, language, and descriptions. This is valuable for assistant-side ranking and concise profile generation.
+
+GitHub repo details:
+Returns deeper repo context including README extraction when available. Useful for project-level Q and A.
+
+Contract state:
+Reads chain info, address balance, and attempts common zero-arg views where present in ABI.
+
+Contract call:
+Calls specified zero-arg view or pure function by name. Useful for specific protocol checks.
+
+LinkedIn tools:
+Optional and dependency-sensitive by design. If unavailable, they fail gracefully.
+
+X tools:
+Support profile-level metrics and recent posts with engagement fields. Some fields depend on account permissions.
+
+Health tool:
+Summarizes configured integrations, missing requirements, and provider alias status.
+
+Prompt tool:
+Generates a context-driven cold email draft seed using your own data.
+
+## Integration Health as Operational Control Plane
+
+The health tool is a major practical feature, not a cosmetic one. It gives immediate operational clarity before you start using higher-level prompts.
+
+What it tells you:
+
+- Which required env keys are missing
+- Whether core setup is ready
+- Whether RPC is reachable
+- Whether optional dependencies exist
+- Whether X key aliases are recognized
+
+This makes debugging fast:
+
+- Run health
+- Fix missing keys
+- Run health again
+- Move to functional prompts
+
+That loop reduces setup friction dramatically.
+
+## Reliability and Error Handling Philosophy
+
+A personal MCP server should fail in a controlled way. This project avoids hard crashes by returning structured error payloads from tool functions wherever possible.
+
+Examples:
+
+- Missing env key returns clear message
+- Provider outage returns source-specific error detail
+- Optional integration dependency absent returns guidance instead of stack trace
+- Unsupported contract call pattern returns actionable explanation
+
+This approach improves both developer experience and assistant behavior. The assistant can report meaningful remediation steps instead of generic failure text.
+
+## Security and Compliance Notes
+
+Even though this is a personal project, security discipline matters.
+
+Do not store secrets in source files. Do not embed tokens in prompts. Do not commit environment files. If credentials have ever been shared in logs or chats, rotate them. For GitHub, use fine-grained tokens with minimal repository scope. For RPC keys, monitor provider dashboard usage and rotate periodically.
+
+For public repositories, remember that anything committed may be indexed quickly. Treat accidental exposure as a rotation event, not a minor mistake.
+
+## Practical Testing Plan
+
+Use this simple test progression after each major change:
+
+1. Import smoke test
+Run a one-liner import check against server module.
+
+2. Health tool test
+Verify core_ready and missing_required_env fields.
+
+3. Portfolio test
+Confirm site fetch and extraction.
+
+4. GitHub list and detail tests
+Confirm both broad and deep repository responses.
+
+5. Contract read tests
+Check chain connectivity and at least one safe function call.
+
+6. Prompt generation test
+Confirm cold_email_draft returns context-aware text.
+
+7. Optional platform tests
+Only after keys are valid and required scopes are confirmed.
+
+This structured approach prevents confusion and speeds debugging.
+
+## Deployment and Client Integration Notes
+
+The project is currently optimized for local client connections, especially desktop clients that support MCP server definitions.
+
+For Windows-based Claude Desktop usage, ensure:
+
+- Config JSON is valid and saved without UTF-8 BOM
+- Command points to your virtual environment Python executable
+- Args points to server.py absolute path
+- App is fully restarted after config edits
+- New chat is opened after restart
+
+When config is wrong, symptoms can look like unrelated connector behavior. Health prompt in a fresh chat is the quickest truth check.
+
+## Current Constraints and Honest Tradeoffs
+
+No system is perfect, and this one has clear boundaries:
+
+- LinkedIn data extraction can be brittle due upstream platform changes
+- X analytics depth depends on account access tier and endpoint permissions
+- Contract helper is intentionally conservative for safety and simplicity
+- Python ecosystem compatibility can vary by version for native packages
+
+These tradeoffs are acceptable because core value remains high even with partial integrations.
+
+## Expansion Roadmap
+
+Strong next steps for this project:
+
+- Add persistent caching with TTL per integration
+- Add request tracing and latency metrics
+- Add typed response schemas for every tool
+- Add argument-support for contract function calls with ABI-aware conversion
+- Add project ranking heuristic for role-targeted summaries
+- Add prompt pack for recruiter outreach, grant applications, and investor updates
+- Add test suite with mocked provider responses
+
+This roadmap turns the project from useful personal utility into a robust personal AI platform.
+
+## Final Perspective
+
+Aditya Personal MCP Server is a strong foundation for developer-specific AI context. It turns scattered profile data and technical signals into a single local interface that assistants can query in real time. Instead of explaining yourself repeatedly, you expose your data once and let the tools do the work.
+
+The long-term value is compounding. As your repositories grow, contracts evolve, and portfolio changes, the assistant stays aligned because it reads live sources through stable tools. That means better technical conversations, better writing support, better outreach, and better decision support.
+
+This project is already practical today, and it is structured in a way that makes future upgrades straightforward. It is not just another integration script. It is the beginning of a personal context operating layer for AI-native workflows.
