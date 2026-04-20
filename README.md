@@ -169,3 +169,5 @@ Possible next upgrades include:
 ## Summary
 
 Aditya Personal MCP Server turns scattered professional signals into a single, queryable AI interface. It is local, extensible, integration-aware, and practical for daily usage. By connecting portfolio, code, on-chain state, and communication channels under one MCP server, you enable assistants to respond with context that is current, verifiable, and specific to your actual work. This is the foundation for a personal AI control plane: one endpoint that reflects what you build, what you ship, how your protocol behaves, and how you present yourself across the ecosystem.
+#   P e r s o n a l i z e d - M C P - s e r v e r  
+ 
