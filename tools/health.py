@@ -24,6 +24,9 @@ def _check_rpc_connectivity(timeout_seconds: int = 5) -> dict[str, Any]:
 
 
 def get_integration_health() -> dict[str, Any]:
+    x_api_key_set = _has_env("X_API_KEY") or _has_env("X_CONSUMER_KEY")
+    x_api_secret_set = _has_env("X_API_SECRET") or _has_env("X_SECRET_KEY")
+
     env_status = {
         "PORTFOLIO_URL": _has_env("PORTFOLIO_URL"),
         "GITHUB_USERNAME": _has_env("GITHUB_USERNAME"),
@@ -33,7 +36,9 @@ def get_integration_health() -> dict[str, Any]:
         "LINKEDIN_PASSWORD": _has_env("LINKEDIN_PASSWORD"),
         "X_BEARER_TOKEN": _has_env("X_BEARER_TOKEN"),
         "X_API_KEY": _has_env("X_API_KEY"),
+        "X_CONSUMER_KEY": _has_env("X_CONSUMER_KEY"),
         "X_API_SECRET": _has_env("X_API_SECRET"),
+        "X_SECRET_KEY": _has_env("X_SECRET_KEY"),
         "X_ACCESS_TOKEN": _has_env("X_ACCESS_TOKEN"),
         "X_ACCESS_SECRET": _has_env("X_ACCESS_SECRET"),
     }
@@ -67,11 +72,15 @@ def get_integration_health() -> dict[str, Any]:
             "configured": env_status["X_BEARER_TOKEN"],
             "required_env": ["X_BEARER_TOKEN"],
             "optional_env": [
-                "X_API_KEY",
-                "X_API_SECRET",
+                "X_API_KEY or X_CONSUMER_KEY",
+                "X_API_SECRET or X_SECRET_KEY",
                 "X_ACCESS_TOKEN",
                 "X_ACCESS_SECRET",
             ],
+            "alias_status": {
+                "api_key_available": x_api_key_set,
+                "api_secret_available": x_api_secret_set,
+            },
         },
     }
 

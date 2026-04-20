@@ -4,10 +4,18 @@ from typing import Any
 import tweepy
 
 
+def _first_non_empty(*keys: str) -> str:
+    for key in keys:
+        value = os.getenv(key, "").strip()
+        if value:
+            return value
+    return ""
+
+
 def _client() -> tweepy.Client:
-    bearer = os.getenv("X_BEARER_TOKEN", "").strip()
-    api_key = os.getenv("X_API_KEY", "").strip()
-    api_secret = os.getenv("X_API_SECRET", "").strip()
+    bearer = _first_non_empty("X_BEARER_TOKEN")
+    api_key = _first_non_empty("X_API_KEY", "X_CONSUMER_KEY")
+    api_secret = _first_non_empty("X_API_SECRET", "X_SECRET_KEY")
     access_token = os.getenv("X_ACCESS_TOKEN", "").strip()
     access_secret = os.getenv("X_ACCESS_SECRET", "").strip()
 
