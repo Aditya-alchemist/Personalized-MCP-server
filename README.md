@@ -67,6 +67,30 @@ sequenceDiagram
 		Server-->>Client: Final result
 ```
 
+## Screenshots
+
+
+<img width="1495" height="1057" alt="Screenshot 2026-04-20 232007" src="https://github.com/user-attachments/assets/0140be2f-b3fc-486d-86b0-14fad47a48ee" />
+
+<img width="1604" height="1030" alt="Screenshot 2026-04-21 194649" src="https://github.com/user-attachments/assets/f881000a-b0aa-4690-b2e5-7c16618086dd" />
+
+<img width="1319" height="985" alt="Screenshot 2026-04-21 195400" src="https://github.com/user-attachments/assets/93163eaa-3c4c-48fd-b865-56e9f60f5a85" />
+
+<img width="1234" height="1008" alt="Screenshot 2026-04-21 195408" src="https://github.com/user-attachments/assets/6b5b16b7-a356-4f7d-a9d6-80d2fea1641e" />
+
+
+## Prompts
+
+<img width="290" height="188" alt="Screenshot 2026-04-20 232150" src="https://github.com/user-attachments/assets/0c67e3a3-317e-4ed9-bb55-6c8dddb420e5" />
+
+
+
+
+
+
+
+
+
 ## Repository Structure
 
 - server.py: tool and prompt registration
